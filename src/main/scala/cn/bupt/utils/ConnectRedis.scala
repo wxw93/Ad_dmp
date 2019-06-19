@@ -2,10 +2,10 @@ package cn.bupt.utils
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig
 import redis.clients.jedis.JedisPool
+object ConnectRedis {
 
-object ConnectRedis extends App {
+  private val config = new GenericObjectPoolConfig()
+  private val jedisPool = new JedisPool(config, "192.168.25.145", 6379, 3000,null,1)
 
-  val jedisPool = new JedisPool(new GenericObjectPoolConfig(),"192.168.25.145",6379)
-
-  def getRedis() = jedisPool.getResource()
+  def getJedis() = jedisPool.getResource
 }

@@ -67,6 +67,12 @@
             <version>1.2.50</version>
         </dependency>
 
+        <dependency>
+            <groupId>ch.hsr</groupId>
+            <artifactId>geohash</artifactId>
+            <version>1.0.12</version>
+        </dependency>
+
     </dependencies>
 
 </project>
