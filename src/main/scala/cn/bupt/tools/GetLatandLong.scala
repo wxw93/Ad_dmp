@@ -1,12 +1,12 @@
 package cn.bupt.tools
 
 import ch.hsr.geohash.GeoHash
-import cn.bupt.utils.{BaiduGeoApi, ConnectRedis}
+import cn.bupt.utils.{BaiduGeoApi, ConnectRedis, GaoDeCeoApi}
 import org.apache.commons.lang.StringUtils
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SQLContext
 
-//获取经纬度，根据百度api获取商业圈
+//获取经纬度，根据百度api获取商业圈，使用高德api开发
 object GetLatandLong {
   def main(args: Array[String]): Unit = {
     // 0 校验参数个数
@@ -45,8 +45,11 @@ object GetLatandLong {
           val long = row.getAs[String]("long")
           //geo 32位hash编码
           val base32code = GeoHash.withCharacterPrecision(lat.toDouble,long.toDouble,8).toBase32
-          val bussiness = BaiduGeoApi.getBussine(lat+","+long)
+          //System.out.println(long+","+lat)
+          //val bussiness = BaiduGeoApi.getBussine(lat+","+long)
+          val bussiness = GaoDeCeoApi.getBusness(long+","+lat)
           if(!StringUtils.isEmpty(bussiness)){
+            System.out.println(bussiness)
             jedis.set(base32code,bussiness)
           }
         })
