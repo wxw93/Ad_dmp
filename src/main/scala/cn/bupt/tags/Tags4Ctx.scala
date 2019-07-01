@@ -1,6 +1,6 @@
 package cn.bupt.tags
 
-import cn.bupt.utils.TagUtils
+import cn.bupt.utils.{ConnectRedis, TagUtils}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -47,20 +47,33 @@ object Tags4Ctx {
     //读取 parquet 日志文件
     val sqlc = new SQLContext(sc)
     val dataFrame = sqlc.read.parquet(logInputPath)
+     //测试在testUseIdConditition添加下没有数据
+    dataFrame.where(TagUtils.testUseIdConditition).select("lat","long").show()
 
     //过滤数据
-    dataFrame.where(TagUtils.someUseIdConditition)
-      .map(row =>{
-      val adMap = Tags4Ad.MakeTag(row)
-      val appMap = Tags4App.MakeTag(row,dictMapBroat.value)
-      val deviceMap = Tags4Device.MakeTag(row)
-      val keywordMap = Tags4KeyWord.MakeTag(row,keyWordBroat.value)
-      val channelMap = Tags4Channel.MakeTag(row)
+    dataFrame.where(TagUtils.someUseIdConditition).mapPartitions(pars => {
+      val listBuffer = new collection.mutable.ListBuffer[(String,List[(String,Int)])]()
+      val jedis = ConnectRedis.getJedis()
+      pars.foreach(row=>{
+        val adMap = Tags4Ad.MakeTag(row)
+        val appMap = Tags4App.MakeTag(row,dictMapBroat.value)
+        val deviceMap = Tags4Device.MakeTag(row)
+        val keywordMap = Tags4KeyWord.MakeTag(row,keyWordBroat.value)
+        val channelMap = Tags4Channel.MakeTag(row)
 
-      val UserIds = TagUtils.getAllUserId(row)
+        //商业标签
+        val bussMap = Tags4Buss.MakeTag(row,jedis)
 
-      //设置返回
-        (UserIds(0),(adMap++appMap++deviceMap++keywordMap++channelMap).toList)
+        val UserIds = TagUtils.getAllUserId(row)
+        //其他userId
+        val otherUserId = UserIds.slice(1,UserIds.length).map(usId=>(usId,0)).toMap
+
+        //设置返回
+        listBuffer.append((UserIds(0),(adMap ++ appMap ++ deviceMap ++ keywordMap ++ channelMap ++ bussMap ++ otherUserId).toList))
+        listBuffer
+      })
+      jedis.close()
+      listBuffer.iterator
     }).reduceByKey((a,b) =>{
       (a ++ b).groupBy(_._1).mapValues(_.foldLeft(0)(_+_._2)).toList
     }).saveAsTextFile(resultOutputPath)

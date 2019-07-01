@@ -13,6 +13,14 @@ object TagUtils {
       | imeisha1 !="" or mac != "" or idfasha1 != "" or openudidsha1 != "" or androididsha1 != ""
     """.stripMargin
 
+  var testUseIdConditition =
+    """
+      | (imei !="" or mac != "" or idfa != "" or openudid != "" or androidid != "" or
+      | imeimd5 !="" or macmd5 != "" or idfamd5 != "" or openudidmd5 != "" or androididmd5 != "" or
+      | imeisha1 !="" or mac != "" or idfasha1 != "" or openudidsha1 != "" or androididsha1 != "") and
+      | lat>3 and lat<54 and long>73 and long <136
+    """.stripMargin
+
   def getAllUserId(row:Row):ListBuffer[String] ={
     var AllUserId = new ListBuffer[String]()
 
@@ -33,8 +41,6 @@ object TagUtils {
     if(row.getAs[String]("macsha1").nonEmpty)  AllUserId.append("MCS"+row.getAs[String]("macsha1").toUpperCase)
     if(row.getAs[String]("androididsha1").nonEmpty)  AllUserId.append("ADS"+row.getAs[String]("androididsha1").toUpperCase)
     if(row.getAs[String]("openudidsha1").nonEmpty)  AllUserId.append("OUS"+row.getAs[String]("openudidsha1").toUpperCase)
-
-
 
     AllUserId
   }
